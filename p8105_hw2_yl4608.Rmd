@@ -1,0 +1,155 @@
+---
+title: "p8105_hw2_yl4608.Rmd"
+author: "Yutian Luo"
+date: "9/28/2020"
+output: github_document
+---
+
+# Problem 1
+
+```{r}
+library(tidyverse)
+library(readxl)
+```
+
+specify the sheet in the Excel file and to omit non-data entries (rows with notes / figures; columns containing notes) using arguments in read_excel
+
+```{r}
+trash_data = 
+  read_excel(
+    "./data/Trash-Wheel-Collection-Totals-8-6-19.xlsx", 
+    sheet = "Mr. Trash Wheel",
+    range = cell_cols("A:N")) %>%       # horizontally define range
+  janitor::clean_names()%>%             # clean the names to lower cases
+  drop_na(dumpster)%>%
+  
+  mutate(
+    #round the number of sports balls to the nearest integer and converts the result to an integer variable (using as.integer)
+    sports_balls = round(sports_balls),
+    sports_balls = as.integer(sports_balls)
+  )
+
+```
+
+
+Read and clean precipitation data for 2017 and 2018. 
+For each, omit rows without precipitation data and add a variable year. 
+
+```{r}
+
+precip_2017 = 
+  read_excel(
+    "./data/Trash-Wheel-Collection-Totals-8-6-19.xlsx",
+    sheet = "2017 Precipitation",
+    skip = 1                       # skip the title column
+    )%>%
+  janitor::clean_names()%>%
+  drop_na(month)%>%                # drop rows without data
+  mutate(year = 2017)%>%              # add variable year
+  relocate(year)                  # locate year col in front of month col
+
+precip_2018 = 
+  read_excel(
+    "./data/Trash-Wheel-Collection-Totals-8-6-19.xlsx",
+    sheet = "2018 Precipitation",
+    skip = 1                       # skip the title column
+    )%>%
+  janitor::clean_names()%>%
+  drop_na(month)%>%                # drop rows without data
+  mutate(year = 2018)%>%              # add variable year
+  relocate(year)                  # locate year col in front of month col
+```
+
+Next, combine precipitation datasets and convert month to a character variable (the variable month.name is built into R and should be useful).
+
+```{r}
+month_df =
+  tibble(
+    month = 1:12,
+    month_name = month.name
+  )
+
+precip_df =
+  bind_rows(precip_2017, precip_2018)    # combine: add 2018 at the end of 2017
+  
+left_join(precip_df, month_df, by = "month")   # join all cols in month_df with precip_df, key is month var
+```
+
+Write a paragraph about these data; you are encouraged to use inline R. Be sure to note the number of observations in both resulting datasets, and give examples of key variables. For available data, what was the total precipitation in 2018? What was the median number of sports balls in a dumpster in 2017?
+
+    This dataset has cols of trash data stored in dumpster variable. There total of `r nrow(trash_data)` in the dataset.
+
+
+
+# Problem 2
+
+Read and clean the data; 
+
+retain line, station, name, station latitude / longitude, routes served, entry, vending, entrance type, and ADA compliance. 
+
+Convert the entry variable from character (YES vs NO) to a logical variable (the ifelse or recode function may be useful).
+
+```{r setup}
+nyc_data = 
+    read_csv(
+    file = "./data/NYC_Transit_Subway_Entrance_And_Exit_Data.csv")%>%
+  janitor::clean_names()%>%
+  
+  select(
+    line, station_name, station_latitude, station_longitude, route1, route2, route3, route4, route5, route6, route7, route8, route9, route10, route11, entry, vending, entrance_type, ada)%>%
+  
+  mutate(
+    entry = recode(entry, `YES`=TRUE, `NO` = FALSE)    # recode entry variable
+  )
+```
+
+Write a short paragraph about this dataset – explain briefly what variables the dataset contains, describe your data cleaning steps so far, and give the dimension (rows x columns) of the resulting dataset. Are these data tidy?
+
+This dataset contains transit variables of NYC metro stations, stored by line, station name, route services and other variables. I have cleaned the names of the variables to lower cases, select relevant variables for analysis, and also change the expression of entry variable to logical type. This dataset has a dimension of `r dim(nyc_data)`. These data still has missing values in route services.
+
+
+## Answer Questions
+
+Answer the following questions using these data:
+
+How many distinct stations are there? 
+Note that stations are identified both by name and by line (e.g. 125th St A/B/C/D; 125st 1; 125st 4/5); the distinct function may be useful here.
+
+    There are `r nrow(distinct(nyc_data, station_name, line))` distinct stations.
+
+How many stations are ADA compliant?
+
+    There are `r  nrow(filter(nyc_data, ada == TRUE))` ADA compliant stations.
+
+```{r}
+tbl1 <- table(nyc_data$vending, nyc_data$entry)   # create a table for entry/vending
+prop.table(tbl1)      # proportion table
+
+prop_novend_entry = prop.table(tbl1)[3]   # report the proportion that vending = No and entry = true
+```
+  
+What proportion of station entrances / exits without vending allow entrance?
+
+    There are `r prop_novend_entry * 100` % of such stations.  
+
+
+## Route Number Reformat
+
+Reformat data so that route number and route name are distinct variables. 
+How many distinct stations serve the A train? Of the stations that serve the A train, how many are ADA compliant?
+
+```{r}
+  select(
+    nyc_data, route1, route2, route3, route4, route5, route6, route7, route8, route9, route10, route11)
+  
+```
+
+
+
+
+
+
+
+
+
+
