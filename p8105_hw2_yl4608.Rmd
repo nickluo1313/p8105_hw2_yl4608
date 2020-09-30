@@ -248,17 +248,27 @@ pols_data =
   # use separte func to seperate and convert date into 3 vars
   separate(mon, into = c("year", "month", "day"), sep = "-", convert = TRUE)
 
+#create month df
 month_df2 =
   tibble(
     month = 1:12,
     month_name = month.name
   )
 
+#replace month number with month name
 pols_data = 
   left_join(pols_data, month_df2, by = "month") %>% 
-  # drop(month)
+  select(-month) %>% 
+  relocate(year, month_name, day, prez_gop, prez_dem) %>% 
 
-
+#create a president variable taking values gop and dem, and remove prez_dem and prez_gop; and remove the day variable.
+  pivot_longer(
+    prez_gop:prez_dem,
+    names_to = "president"
+  ) %>% 
+  select(-value) %>% 
+  select(-day) %>% 
+  relocate(year, month_name, president)
 ```
 
 
