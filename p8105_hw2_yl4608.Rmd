@@ -81,6 +81,22 @@ Write a paragraph about these data; you are encouraged to use inline R. Be sure 
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 # Problem 2
 
 Read and clean the data; 
@@ -89,7 +105,7 @@ retain line, station, name, station latitude / longitude, routes served, entry, 
 
 Convert the entry variable from character (YES vs NO) to a logical variable (the ifelse or recode function may be useful).
 
-```{r setup}
+```{r read and clean the data}
 nyc_data = 
     read_csv(
     file = "./data/NYC_Transit_Subway_Entrance_And_Exit_Data.csv")%>%
@@ -99,50 +115,155 @@ nyc_data =
     line, station_name, station_latitude, station_longitude, route1, route2, route3, route4, route5, route6, route7, route8, route9, route10, route11, entry, vending, entrance_type, ada)%>%
   
   mutate(
-    entry = recode(entry, `YES`=TRUE, `NO` = FALSE)    # recode entry variable
-  )
+    entry = recode(entry, `YES`=TRUE, `NO` = FALSE),    # recode entry variable
+    route8 = as.character(route8),
+    route9 = as.character(route9),
+    route10 = as.character(route10),
+    route11 = as.character(route11)
+    )
 ```
 
+Q: 
 Write a short paragraph about this dataset – explain briefly what variables the dataset contains, describe your data cleaning steps so far, and give the dimension (rows x columns) of the resulting dataset. Are these data tidy?
 
-This dataset contains transit variables of NYC metro stations, stored by line, station name, route services and other variables. I have cleaned the names of the variables to lower cases, select relevant variables for analysis, and also change the expression of entry variable to logical type. This dataset has a dimension of `r dim(nyc_data)`. These data still has missing values in route services.
-
+A:
+This dataset contains transit variables of NYC metro stations, stored `r names(nyc_data)` variables. I have cleaned the names of the variables to lower cases, select relevant variables for analysis, and also change the expression of entry variable to logical type. This dataset has a dimension of `r dim(nyc_data)`. The data is untidy, since some numeric values are expressed in the variables, such as route number.
 
 ## Answer Questions
 
 Answer the following questions using these data:
 
+Q:
 How many distinct stations are there? 
 Note that stations are identified both by name and by line (e.g. 125th St A/B/C/D; 125st 1; 125st 4/5); the distinct function may be useful here.
 
-    There are `r nrow(distinct(nyc_data, station_name, line))` distinct stations.
+A:
 
+    There are `r nrow(distinct(nyc_data, station_name, line, .keep_all = TRUE))` distinct stations.
+    
+Q:
 How many stations are ADA compliant?
 
-    There are `r  nrow(filter(nyc_data, ada == TRUE))` ADA compliant stations.
+A:
 
-```{r}
-tbl1 <- table(nyc_data$vending, nyc_data$entry)   # create a table for entry/vending
-prop.table(tbl1)      # proportion table
-
-prop_novend_entry = prop.table(tbl1)[3]   # report the proportion that vending = No and entry = true
-```
-  
+    There are `r  nrow(distinct(filter(nyc_data, ada == TRUE)))` ADA compliant stations.
+    
+Q:
 What proportion of station entrances / exits without vending allow entrance?
 
-    There are `r prop_novend_entry * 100` % of such stations.  
+```{r}
+# stations no vending 
+num_novend = nrow(filter(nyc_data, vending == "NO")) 
+# stationa no vending && allow entrance
+num_novend_enter = nrow(filter(nyc_data, vending == "NO", entry == TRUE ))
+# calculate porportion
+prop = num_novend_enter/num_novend
+```
 
+A:
 
-## Route Number Reformat
+    There are `r prop * 100` % of such stations.  
+
+## Reformat data
 
 Reformat data so that route number and route name are distinct variables. 
-How many distinct stations serve the A train? Of the stations that serve the A train, how many are ADA compliant?
+
+```{r reformat data to tidy version}
+#reformat data
+nyc_tidy_data = 
+  select(nyc_data, route1:route11, station_name, line, ada) %>% 
+    pivot_longer(
+    route1 : route11,
+    names_to = "route_number",
+    values_to = "route_name") %>% 
+  relocate(route_number, route_name)
+```
+
+Q: How many distinct stations serve the A train?
+```{r filter distinct A stations}
+nyc_tidy_data_df1 = 
+  filter(nyc_tidy_data, route_name == "A") %>% 
+  distinct(station_name)
+```
+
+A: There are `r nrow(nyc_tidy_data_df1)` distinct stations serve the A train.
+
+
+Q: Of the stations that serve the A train, how many are ADA compliant?
+```{r}
+nyc_tidy_data_df2 =
+  filter(nyc_tidy_data, route_name == "A") %>%  
+  filter(ada == TRUE) %>% 
+  distinct(station_name)
+```
+
+A: There are `r nrow(nyc_tidy_data_df2)` A train stations that are ada compliant.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# problem 3
+
+First, clean the data in pols-month.csv.
+
+Use separate() to break up the variable mon into integer variables year, month, and day; 
+
+replace month number with month name; 
+
+create a president variable taking values gop and dem, and remove prez_dem and prez_gop; and remove the day variable.
+
 
 ```{r}
-  select(
-    nyc_data, route1, route2, route3, route4, route5, route6, route7, route8, route9, route10, route11)
-  
+pols_data =
+  read_csv(
+    file = "./data/fivethirtyeight_datasets/pols-month.csv"
+  )%>%
+  janitor::clean_names()%>%
+  #convert mon into character first
+  mutate(                      
+    mon = as.character(mon)
+  ) %>%
+  # use separte func to seperate and convert date into 3 vars
+  separate(mon, into = c("year", "month", "day"), sep = "-", convert = TRUE)
+
+month_df2 =
+  tibble(
+    month = 1:12,
+    month_name = month.name
+  )
+
+pols_data = 
+  left_join(pols_data, month_df2, by = "month") %>% 
+  # drop(month)
+
+
 ```
+
+
+
+
 
 
 
