@@ -481,7 +481,7 @@ left_join(precip_df, month_df, by = &quot;month&quot;)   # join all cols in mont
 ## )</code></pre>
 <pre><code>## See spec(...) for full column specifications.</code></pre>
 <p>Q: Write a short paragraph about this dataset – explain briefly what variables the dataset contains, describe your data cleaning steps so far, and give the dimension (rows x columns) of the resulting dataset. Are these data tidy?</p>
-<p>A: This dataset contains transit variables of NYC metro stations, stored line, station_name, station_latitude, station_longitude, route1, route2, route3, route4, route5, route6, route7, route8, route9, route10, route11, entry, vending, entrance_type, ada variables. I have cleaned the names of the variables to lower cases, select relevant variables for analysis, and also change the expression of entry variable to logical type. This dataset has a dimension of 1868, 19. The data is untidy, since some numeric values are expressed in the variables, such as route number.</p>
+<p>A: This dataset contains transit variables of NYC metro stations, stored line, station_name, station_latitude, station_longitude, route1, route2, route3, route4, route5, route6, route7, route8, route9, route10, route11, entry, vending, entrance_type, ada variables. I have cleaned the names of the variables to lower cases, select relevant variables for analysis, and also change the expression of entry variable to logical type. This dataset has a dimension of 1868 * 19. The data is untidy, since some numeric values are expressed in the variables, such as route number.</p>
 <div id="answer-questions" class="section level2">
 <h2>Answer Questions</h2>
 <p>Answer the following questions using these data:</p>
@@ -491,6 +491,7 @@ left_join(precip_df, month_df, by = &quot;month&quot;)   # join all cols in mont
 <p>Q: How many stations are ADA compliant?</p>
 <p>A:</p>
 <pre><code>There are 179 ADA compliant stations.</code></pre>
+<pre class="r"><code>#nrow(filter(distinct_data2,  route_name == &quot;A&quot;, ada == &quot;TRUE&quot;))</code></pre>
 <p>Q: What proportion of station entrances / exits without vending allow entrance?</p>
 <pre class="r"><code># stations no vending 
 num_novend = nrow(filter(nyc_data, vending == &quot;NO&quot;)) 
@@ -511,7 +512,9 @@ nyc_tidy_data =
     route1 : route11,
     names_to = &quot;route_number&quot;,
     values_to = &quot;route_name&quot;) %&gt;% 
-  relocate(route_number, route_name)</code></pre>
+  relocate(route_number, route_name)
+
+view(nyc_tidy_data)</code></pre>
 <p>Q: How many distinct stations serve the A train?</p>
 <pre class="r"><code>nyc_tidy_data_df1 = 
   filter(nyc_tidy_data, route_name == &quot;A&quot;) %&gt;% 

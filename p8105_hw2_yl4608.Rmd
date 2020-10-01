@@ -123,11 +123,13 @@ nyc_data =
     )
 ```
 
+
+
 Q: 
 Write a short paragraph about this dataset – explain briefly what variables the dataset contains, describe your data cleaning steps so far, and give the dimension (rows x columns) of the resulting dataset. Are these data tidy?
 
 A:
-This dataset contains transit variables of NYC metro stations, stored `r names(nyc_data)` variables. I have cleaned the names of the variables to lower cases, select relevant variables for analysis, and also change the expression of entry variable to logical type. This dataset has a dimension of `r dim(nyc_data)`. The data is untidy, since some numeric values are expressed in the variables, such as route number.
+This dataset contains transit variables of NYC metro stations, stored `r names(nyc_data)` variables. I have cleaned the names of the variables to lower cases, select relevant variables for analysis, and also change the expression of entry variable to logical type. This dataset has a dimension of `r nrow(nyc_data)` * `r ncol(nyc_data)`. The data is untidy, since some numeric values are expressed in the variables, such as route number.
 
 ## Answer Questions
 
@@ -136,6 +138,12 @@ Answer the following questions using these data:
 Q:
 How many distinct stations are there? 
 Note that stations are identified both by name and by line (e.g. 125th St A/B/C/D; 125st 1; 125st 4/5); the distinct function may be useful here.
+
+
+```{r}
+distinct_data1 = distinct(nyc_data, line, station_name, .keep_all = TRUE) 
+nrow(distinct_data1)
+```
 
 A:
 
@@ -146,7 +154,8 @@ How many stations are ADA compliant?
 
 A:
 
-    There are `r  nrow(distinct(filter(nyc_data, ada == TRUE)))` ADA compliant stations.
+    There are `r  nrow(filter(distinct_data1,  ada == "TRUE"))` ADA compliant stations.
+
     
 Q:
 What proportion of station entrances / exits without vending allow entrance?
@@ -163,7 +172,8 @@ prop = num_novend_enter/num_novend
 A:
 
     There are `r prop * 100` % of such stations.  
-
+    
+    
 ## Reformat data
 
 Reformat data so that route number and route name are distinct variables. 
@@ -177,13 +187,18 @@ nyc_tidy_data =
     names_to = "route_number",
     values_to = "route_name") %>% 
   relocate(route_number, route_name)
+
+view(nyc_tidy_data)
 ```
+
+
 
 Q: How many distinct stations serve the A train?
 ```{r filter distinct A stations}
 nyc_tidy_data_df1 = 
-  filter(nyc_tidy_data, route_name == "A") %>% 
-  distinct(station_name)
+  distinct(nyc_tidy_data, line, station_name, .keep_all = TRUE) %>% 
+  filter(route_name == "A")
+
 ```
 
 A: There are `r nrow(nyc_tidy_data_df1)` distinct stations serve the A train.
@@ -192,9 +207,9 @@ A: There are `r nrow(nyc_tidy_data_df1)` distinct stations serve the A train.
 Q: Of the stations that serve the A train, how many are ADA compliant?
 ```{r}
 nyc_tidy_data_df2 =
-  filter(nyc_tidy_data, route_name == "A") %>%  
-  filter(ada == TRUE) %>% 
-  distinct(station_name)
+  distinct(nyc_tidy_data, line, station_name, .keep_all = TRUE) %>% 
+  filter(route_name == "A", ada == TRUE) 
+
 ```
 
 A: There are `r nrow(nyc_tidy_data_df2)` A train stations that are ada compliant.
