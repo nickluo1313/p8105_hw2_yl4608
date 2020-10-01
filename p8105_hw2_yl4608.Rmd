@@ -2,7 +2,7 @@
 title: "p8105_hw2_yl4608.Rmd"
 author: "Yutian Luo"
 date: "9/28/2020"
-output: html_document
+output: github_document
 ---
 
 # Problem 1
