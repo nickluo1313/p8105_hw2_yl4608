@@ -2,7 +2,7 @@
 title: "p8105_hw2_yl4608.Rmd"
 author: "Yutian Luo"
 date: "9/28/2020"
-output: github_document
+output: html_document
 ---
 
 # Problem 1
@@ -268,8 +268,106 @@ pols_data =
   ) %>% 
   select(-value) %>% 
   select(-day) %>% 
-  relocate(year, month_name, president)
+  arrange(year, month_name) %>% 
+  relocate(year, month_name, president) %>% 
+  mutate( month_name = month.abb[as.factor(month_name)],
+          year = as.integer(year)
+        )
+
+view(pols_data)
 ```
+
+
+Second, clean the data in snp.csv using a similar process to the above. For consistency across datasets, arrange according to year and month, and organize so that year and month are the leading columns.
+
+```{r}
+snp_data = 
+  read.csv(
+    file = "./data/fivethirtyeight_datasets/snp.csv"
+    ) %>% 
+  janitor::clean_names() %>% 
+  separate(date, into = c("month","day","year"), sep = "/", convert = TRUE) %>%
+  
+#organize date variables
+  mutate(
+    month = as.integer(month),
+    day = as.integer(day),
+    year = as.integer(year)
+  ) %>%
+  select(-day) %>% 
+  relocate(year, month) %>% 
+  arrange(year, month) 
+
+# replace month number with month names
+snp_data =
+  left_join(snp_data, month_df2, by = "month") %>% 
+  select(-month) %>% 
+  relocate(year, month_name) %>% 
+  mutate( month_name = month.abb[as.factor(month_name)],
+          year = as.integer(year)
+        )
+
+  
+view(snp_data)
+```
+
+
+Third, tidy the unemployment data so that it can be merged with the previous datasets. This process will involve switching from “wide” to “long” format; ensuring that key variables have the same name; and ensuring that key variables take the same values.
+
+```{r}
+unemp_data = 
+  read.csv(
+    file = "./data/fivethirtyeight_datasets/unemployment.csv"
+    ) %>% 
+  janitor::clean_names() %>% 
+  
+# pivot to long format
+  pivot_longer(
+    jan:dec,
+    names_to = "month_name",
+    values_to = "unemployment"
+  ) %>% 
+
+# ensure key variables have same name and same value
+  arrange(year, month_name) %>% 
+  mutate( month_name = month.abb[as.factor(month_name)],
+          year = as.integer(year)
+        )
+
+
+view(unemp_data)
+```
+
+
+Join the datasets by merging snp into pols, and merging unemployment into the result.
+
+```{r}
+# merging snp into pols
+merge_pols_snp = 
+  left_join(pols_data, snp_data, by = c("year","month_name"))
+
+view(merge_pols_snp)
+
+# merging unemployment into the result.
+merge_unemp =
+  left_join(merge_pols_snp, unemp_data, by = c("year","month_name"))
+
+view(merge_unemp)
+```
+
+Q;
+Write a short paragraph about these datasets. Explain briefly what each dataset contained, and describe the resulting dataset (e.g. give the dimension, range of years, and names of key variables).
+
+
+A:
+
+The pols_data has variables that describes the election sitation of each year, it contains variables such as `r names(pols_data)`. It has `r dim(pols_data)` dimension in it. 
+
+The snp_data has variables that records the stock market in each months of the years in between `r range(snp_data$year)` in  history. It has `r names(snp_data)` as variables.
+
+The unemp_data notes down the unemployment rates in each year and month. It has in total `r dim(unemp_data)` as dimension. The time duration for this dataset is between `r range(unemp_data$year)`. It has variables as `r names(unemp_data)`.
+
+The final dataset has a dimension of `r dim(merge_unemp)`, the range of years in total is `r range(merge_unemp$year)`, and the variables are `r names(merge_unemp)`.
 
 
 
